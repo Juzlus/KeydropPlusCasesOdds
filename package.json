@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "dotenv": "^16.4.5",
+    "fs": "^0.0.1-security",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^22.6.2",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
