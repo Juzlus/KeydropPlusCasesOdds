@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const { langCodes } = require('./data/langCodes.js');
 const cooldown = 1 * 1000;
+const timeout = parseInt(process.env.BROWSER_TIMEOUT);
 
 const casesHref = ['https://key-drop.com/pl/skins/category/zony', 'https://key-drop.com/pl/skins/category/forever','https://key-drop.com/pl/skins/category/nexe', 'https://key-drop.com/pl/skins/category/dmg', 'https://key-drop.com/pl/skins/category/innocent', 'https://key-drop.com/pl/skins/category/medusa', 'https://key-drop.com/pl/skins/category/isamu', 'https://key-drop.com/pl/skins/category/mateo', 'https://key-drop.com/pl/skins/category/kacper-rietz', 'https://key-drop.com/pl/skins/category/mopo', 'https://key-drop.com/pl/skins/category/xm1nn', 'https://key-drop.com/pl/skins/category/rennow', 'https://key-drop.com/pl/skins/category/enerqia'];
 
@@ -132,7 +133,7 @@ const ConvertCaseList = (caseList) => {
 const FetchCaseList = async(page, isEvent = false) => {
     try {
         await page.goto(isEvent ? 'https://key-drop.com/en/Event/Event/globalEvents' : 'https://key-drop.com/en/apiData/Cases');
-        await page.waitForSelector('pre');
+        await page.waitForSelector('pre', { timeout: timeout });
         console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Fetching ${isEvent ? 'event ' : ''}case list...${colors.reset}`)
         return await page.evaluate(() => {
             const el = document.querySelector('pre');
@@ -168,9 +169,9 @@ const ChangeCountry = async(page, langCode) => {
 };
 
 const GetOdds = async(page, index) => {
-    await page.goto(casesHref[index], { timeout: 160000 });
     try {
-        await page.waitForSelector('#header-root');
+        await page.goto(casesHref[index], { timeout: timeout });
+        await page.waitForSelector('#header-root', { timeout: timeout });
         console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Loading case odds... ${colors.green}${index + 1}${colors.reset} ${colors.bright}/ ${colors.magenta}${casesHref?.length}${colors.reset}`)
         return await page.evaluate(() => {
             const caseData = window.__case;
