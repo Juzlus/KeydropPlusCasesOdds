@@ -4,6 +4,7 @@
     "dotenv": "^16.4.5",
     "fs": "^0.0.1-security",
     "node-cron": "^3.0.3",
+    "node-fetch": "^2.7.0",
     "puppeteer": "^22.6.2",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"

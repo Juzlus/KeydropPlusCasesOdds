@@ -3,6 +3,7 @@ const cron = require('node-cron');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { Octokit } = require("@octokit/rest");
+const fetch = require("node-fetch");
 require('dotenv').config();
 
 const { langCodes } = require('./data/langCodes.js');
@@ -44,7 +45,13 @@ const WaterMark = () => {
 const CreateChrome = async() => {
     console.log(`\n${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Starting Keydrop Cases Odds${colors.reset}`);
     await puppeteer.use(StealthPlugin())
-    const browser = await puppeteer.launch({ headless: true, options: {'args': ['--no-sandbox']}, executablePath: process.env.BROWSER_PATH });
+    const browser = await puppeteer.launch({
+        timeout: 0,
+        headless: true,
+        options: {'args': ['--no-sandbox']},
+        executablePath: process.env.BROWSER_PATH,
+        protocolTimeout: timeout
+    });
     const page = await browser.newPage();
 
     const eventCase = await FetchCaseList(page, true);
@@ -57,15 +64,23 @@ const CreateChrome = async() => {
         await new Promise(resolve => setTimeout(resolve, cooldown));
     }
 
-    const cases = [];
+    const casesData = [];
     for (i = 0; i < casesHref.length; i++) 
     {
-        const caseInfo = await GetOdds(page, i);
-        cases.push(caseInfo);
+        const caseData = await GetCaseData(page, i);
+        casesData.push(caseData);
         await new Promise(resolve => setTimeout(resolve, cooldown));
     }
 
     await browser.close();
+
+    const cases = [];
+    for (i = 0; i < casesData.length; i++) 
+    {
+        const caseInfo = await GetCaseOdds(casesData, i);
+        cases.push(caseInfo);
+    }
+
     fs.writeFileSync('./cases.json', JSON.stringify(cases, null, 4), 'utf-8');
     console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.green}DONE! New ${colors.magenta}cases.json${colors.reset}${colors.green} file created!${colors.reset}`)
     
@@ -75,7 +90,8 @@ const CreateChrome = async() => {
 
 const updateFileOnGitHub = async(cases) => {
     const octokit = new Octokit({
-        auth: process.env.GITHUB_TOKEN
+        auth: process.env.GITHUB_TOKEN,
+        request: { fetch }
     });
 
     const githubData = {
@@ -104,6 +120,57 @@ const updateFileOnGitHub = async(cases) => {
         console.error(`${colors.red}Error retrieving file content:${colors.reset}`, error);
     });
 };
+
+const GetCaseOdds = (cases, index) => {
+    const caseData = cases[index];
+    const caseEl = {
+        name: caseData?.title,
+    }
+
+    let betterSkinsOdds = 0;
+    console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Converting case info... ${colors.green}${index + 1}${colors.reset} ${colors.bright}/ ${colors.magenta}${cases?.length}${colors.reset}`)
+
+    if(caseData?.priceFrom == 'gold') {
+        let gold = 35000000000;
+        let pfs = [];
+        caseData?.items?.forEach(el => {
+            pfs.push(...el?.pf);
+        });
+        
+        const goldProfit = pfs.reduce((totalProfit, pf) => {
+            while (gold > caseData?.price) {
+                gold -= caseData?.price;
+                const roll = Math.floor(Math.random() * 100000) + 1;
+                const drop = pfs.filter(item => roll >= item?.intervalFrom && roll <= item?.intervalTo);
+                totalProfit += parseFloat(drop[0]?.price);
+            }
+            return totalProfit;
+        }, 0);
+        caseEl.goldProfit = goldProfit?.toFixed(2)
+    }
+    else {
+        caseData?.items?.forEach(el => {
+            if(el?.pf?.length)
+                el?.pf?.forEach(el2 => {
+                    if(el2?.price > caseData?.price)
+                        betterSkinsOdds += el2?.odds;
+                });
+            else
+                if(parseFloat(el?.price) > caseData?.price)
+                    betterSkinsOdds += el?.pfPercent;
+        });
+
+        if (caseData?.layoutVariantId == 'YOUTUBER') {
+            caseEl.img = caseData?.coverImg,
+            caseEl.url = caseData?.url,
+            caseEl.price_USD = caseData?.price,
+            caseEl.youtuber = true
+        }
+        caseEl.odds = Math?.round(betterSkinsOdds);
+    }
+
+    return caseEl;
+}
 
 const ConvertEventCase = (caseList) => {
     const json = JSON.parse(caseList);
@@ -168,61 +235,27 @@ const ChangeCountry = async(page, langCode) => {
     } catch (err) { console.error(err); };
 };
 
-const GetOdds = async(page, index) => {
+const GetCaseData = async(page, index) => {
     try {
         await page.goto(casesHref[index], { timeout: timeout });
         await page.waitForSelector('#header-root', { timeout: timeout });
         console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Loading case odds... ${colors.green}${index + 1}${colors.reset} ${colors.bright}/ ${colors.magenta}${casesHref?.length}${colors.reset}`)
-        return await page.evaluate(() => {
+        return await page.evaluate((caseUrl) => {
             const caseData = window.__case;
             if(!caseData) return;
 
             const caseEl = {
-                name: caseData?.title,
-            }
-
-            let betterSkinsOdds = 0;
-            if(caseData?.priceFrom == 'gold') {
-                let gold = 35000000000;
-                let pfs = [];
-                caseData?.items?.forEach(el => {
-                    pfs.push(...el?.pf);
-                });
-                
-                const goldProfit = pfs.reduce((totalProfit, pf) => {
-                    while (gold > caseData?.price) {
-                        gold -= caseData?.price;
-                        const roll = Math.floor(Math.random() * 100000) + 1;
-                        const drop = pfs.filter(item => roll >= item?.intervalFrom && roll <= item?.intervalTo);
-                        totalProfit += parseFloat(drop[0]?.price);
-                    }
-                    return totalProfit;
-                }, 0);
-                caseEl.goldProfit = goldProfit?.toFixed(2)
-            }
-            else {
-                caseData?.items?.forEach(el => {
-                    if(el?.pf?.length)
-                        el?.pf?.forEach(el2 => {
-                            if(el2?.price > caseData?.price)
-                                betterSkinsOdds += el2?.odds;
-                        });
-                    else
-                        if(parseFloat(el?.price) > caseData?.price)
-                            betterSkinsOdds += el?.pfPercent;
-                });
-
-                if (caseData?.layoutVariant?.id == 'YOUTUBER') {
-                    caseEl.img = caseData?.coverImg,
-                    caseEl.url = caseData?.depositUrl,
-                    caseEl.price_USD = caseData?.price,
-                    caseEl.youtuber = true
-                }
-                caseEl.odds = Math?.round(betterSkinsOdds);
+                title: caseData?.title,
+                priceFrom: caseData?.priceFrom,
+                price: caseData?.price,
+                layoutVariantId: caseData?.layoutVariant?.id,
+                coverImg: caseData?.coverImg,
+                url: caseUrl,
+                items: caseData.items
             }
 
             return caseEl;
-        });
+        }, casesHref[index]);
     }
     catch(err) { console.error(err); };
 }
