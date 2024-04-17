@@ -36,7 +36,7 @@ In case you do not want to update the file on github, leave the **GITHUB_TOKEN**
 - **GITHUB_FILE** - path to case odds file (e.g. data/cases.json)
 - **GITHUB_BRANCH** - branch name (e.g. main)
 
-## 🌐 JSON format
+## 🌐 Preview JSON format
 ```json
 [
     # Youtuber cases format
@@ -56,9 +56,9 @@ In case you do not want to update the file on github, leave the **GITHUB_TOKEN**
         "youtuber": true,
         "odds": 15
     },
-    .
-    .
-    .
+    ,
+    ,
+    ,
     # Game/Skin cases format
     {
         "name": "Sweety",
@@ -68,9 +68,9 @@ In case you do not want to update the file on github, leave the **GITHUB_TOKEN**
         "name": "Delicious",
         "odds": 15
     },
-    .
-    .
-    .
+    ,
+    ,
+    ,
     # Golden cases format
     {
         "name": "TOPAZ",
@@ -85,7 +85,7 @@ In case you do not want to update the file on github, leave the **GITHUB_TOKEN**
 
 ## 🔥 Screenshots
 
-![Fetching cases]()
+![Fetching cases](/img/s1.PNG)
 
 
 ## 📝 Feedback
