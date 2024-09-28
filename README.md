@@ -18,7 +18,7 @@ Designed as a supporting service for [KeydropPlus v2](https://github.com/Juzlus/
 
 ## 💡 Packages needed
 ```bash
-npm i node-fetch@2  @octokit/rest  dotenv  fs  node-cron  puppeteer  puppeteer-extra  puppeteer-extra-plugin-stealth
+npm i node-fetch@2  @octokit/rest  dotenv  node-cron  puppeteer  puppeteer-extra  puppeteer-extra-plugin-stealth
 ```
 
 
@@ -35,6 +35,17 @@ In case you do not want to update the file on github, leave the **GITHUB_TOKEN**
 - **GITHUB_REPO** - repository name
 - **GITHUB_FILE** - path to case odds file (e.g. data/cases.json)
 - **GITHUB_BRANCH** - branch name (e.g. main)
+
+## ✨ Usage
+- [node.js](https://nodejs.org/en)
+- [Keydrop API](https://key-drop.com/en/)
+- [node-fetch](https://github.com/node-fetch/node-fetch)
+- [@octokit/rest](https://github.com/octokit/rest.js)
+- [dotenv](https://github.com/motdotla/dotenv)
+- [node-cron](https://github.com/node-cron/node-cron)
+- [puppeteer](https://github.com/puppeteer/puppeteer)
+- [puppeteer-extra](https://github.com/berstend/puppeteer-extra)
+- [puppeteer-extra-plugin-stealth](https://github.com/berstend/puppeteer-extra/tree/master/packages/puppeteer-extra-plugin-stealth)
 
 ## 🌐 Preview JSON format
 ```json
@@ -86,7 +97,6 @@ In case you do not want to update the file on github, leave the **GITHUB_TOKEN**
 ## 🔥 Screenshots
 
 ![Fetching cases](/img/s1.PNG)
-
 
 ## 📝 Feedback
 
