@@ -25,6 +25,7 @@ npm i node-fetch@2  @octokit/rest  dotenv  node-cron  puppeteer  puppeteer-extra
 ## 🛠️ Configuration
 Configuration variables can be found in the file: "**.env**".
 
+- **COOLDOWN** - waiting time before next fetch
 - **BROWSER_PATH** - path to the selected browser (on most OS can be left empty) 
 - **BROWSER_TIMEOUT** - maximum time to wait for a response (default 160000)
 

@@ -7,10 +7,11 @@ const fetch = require("node-fetch");
 require('dotenv').config();
 
 const { langCodes } = require('./data/langCodes.js');
-const cooldown = 1 * 1000;
+const { ytCases } = require('./data/ytCases.js');
+const cooldown = parseInt(process.env.COOLDOWN);
 const timeout = parseInt(process.env.BROWSER_TIMEOUT);
 
-const casesHref = ['https://key-drop.com/pl/skins/category/zony', 'https://key-drop.com/pl/skins/category/forever','https://key-drop.com/pl/skins/category/nexe', 'https://key-drop.com/pl/skins/category/dmg', 'https://key-drop.com/pl/skins/category/innocent', 'https://key-drop.com/pl/skins/category/medusa', 'https://key-drop.com/pl/skins/category/isamu', 'https://key-drop.com/pl/skins/category/mateo', 'https://key-drop.com/pl/skins/category/kacper-rietz', 'https://key-drop.com/pl/skins/category/mopo', 'https://key-drop.com/pl/skins/category/xm1nn', 'https://key-drop.com/pl/skins/category/rennow', 'https://key-drop.com/pl/skins/category/enerqia'];
+const casesHref = ytCases;
 
 const colors = {
     reset: '\x1b[0m',
@@ -64,7 +65,7 @@ const CreateChrome = async() => {
         await new Promise(resolve => setTimeout(resolve, cooldown));
     }
 
-    const casesData = [];
+    let casesData = [];
     for (i = 0; i < casesHref.length; i++) 
     {
         const caseData = await GetCaseData(page, i);
@@ -75,6 +76,7 @@ const CreateChrome = async() => {
     await browser.close();
 
     const cases = [];
+    casesData = casesData.filter(el => el?.title)
     for (i = 0; i < casesData.length; i++) 
     {
         const caseInfo = await GetCaseOdds(casesData, i);
@@ -125,10 +127,11 @@ const GetCaseOdds = (cases, index) => {
     const caseData = cases[index];
     const caseEl = {
         name: caseData?.title,
+        price_USD: caseData?.price,
     }
 
     let betterSkinsOdds = 0;
-    console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Converting case info... ${colors.green}${index + 1}${colors.reset} ${colors.bright}/ ${colors.magenta}${cases?.length}${colors.reset}`)
+    console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Converting case "${cases[index].title}" info... ${colors.green}${index + 1}${colors.reset} ${colors.bright}/ ${colors.magenta}${cases?.length}${colors.reset}`)
 
     if(caseData?.priceFrom == 'gold') {
         let gold = 35000000000;
@@ -163,7 +166,6 @@ const GetCaseOdds = (cases, index) => {
         if (caseData?.layoutVariantId == 'YOUTUBER') {
             caseEl.img = caseData?.coverImg,
             caseEl.url = caseData?.url,
-            caseEl.price_USD = caseData?.price,
             caseEl.youtuber = true
         }
         caseEl.odds = Math?.round(betterSkinsOdds);
@@ -178,10 +180,12 @@ const ConvertEventCase = (caseList) => {
 
     json['mainEvent']['cases'].forEach(caseEl => {
         casesHref.push(caseEl['url']);
+        casesHref.push(`${caseEl['url']}-joker`);
     });
 
     json['subEvent']['cases'].forEach(caseEl => {
         casesHref.push(caseEl['url']);
+        casesHref.push(`${caseEl['url']}-joker`);
     });
 };
 
@@ -192,7 +196,10 @@ const ConvertCaseList = (caseList) => {
     json['sections'].forEach(sectionEl => {
         sectionEl['cases'].forEach(caseEl => {
             if (!casesHref.includes(caseEl['url']))
+            {
                 casesHref.push(caseEl['url']);
+                casesHref.push(`${caseEl['url']}-joker`);
+            }
         });
     });
 };
@@ -239,7 +246,7 @@ const GetCaseData = async(page, index) => {
     try {
         await page.goto(casesHref[index], { timeout: timeout });
         await page.waitForSelector('#header-root', { timeout: timeout });
-        console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Loading case odds... ${colors.green}${index + 1}${colors.reset} ${colors.bright}/ ${colors.magenta}${casesHref?.length}${colors.reset}`)
+        console.log(`${colors.bright}${colors.black}[${new Date().toLocaleString()}]${colors.reset}${colors.reset} ${colors.bright}Loading case "${casesHref[index].slice(casesHref[index].lastIndexOf('/') + 1)}" odds... ${colors.green}${index + 1}${colors.reset} ${colors.bright}/ ${colors.magenta}${casesHref?.length}${colors.reset}`)
         return await page.evaluate((caseUrl) => {
             const caseData = window.__case;
             if(!caseData) return;
@@ -251,7 +258,7 @@ const GetCaseData = async(page, index) => {
                 layoutVariantId: caseData?.layoutVariant?.id,
                 coverImg: caseData?.coverImg,
                 url: caseUrl,
-                items: caseData.items
+                items: caseData?.items
             }
 
             return caseEl;
